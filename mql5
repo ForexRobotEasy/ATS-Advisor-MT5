@@ -1,0 +1,65 @@
+
+//+------------------------------------------------------------------+
+//|                                                  ATS Advisor MT5 |
+//|                                     Developer's Site: forexroboteasy.com |
+//|                                              Development: Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+// Input parameters
+input double LotSize = 0.01;   // Initial lot size
+input double MaxLotSize = 10.0;   // Maximum lot size
+input double RecoveryFactor = 1.5;   // Lot size multiplier for loss recovery
+input double StopLoss = 100.0;   // Stop loss level in points
+input double TakeProfit = 200.0;   // Take profit level in points
+
+// Global variables
+double previousProfit = 0.0;   // Previous profit
+double currentLotSize = LotSize;   // Current lot size
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Set initial lot size
+   currentLotSize = LotSize;
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                            |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Check for previous profit
+   if(previousProfit > 0)
+   {
+      // Adjust lot size based on previous profit
+      currentLotSize = previousProfit * RecoveryFactor;
+      
+      // Limit lot size to maximum allowed
+      if(currentLotSize > MaxLotSize)
+      {
+         currentLotSize = MaxLotSize;
+      }
+   }
+   
+   // Check for loss recovery
+   if(previousProfit < 0)
+   {
+      // Increase lot size for loss recovery
+      currentLotSize *= RecoveryFactor;
+   }
+   
+   // Open a new trade
+   if(OrderSend(Symbol(), OP_BUY, currentLotSize, Ask, 0, Ask - StopLoss, Ask + TakeProfit, 'ATS Advisor MT5', 0, 0, Green) == -1)
+   {
+      Print('Error opening buy trade: ', GetLastError());
+   }
+   
+   // Save the current profit
+   previousProfit = AccountProfit();
+}
+
+//+------------------------------------------------------------------+
